@@ -107,6 +107,54 @@ async def send_reminder(event, when):
                 break
         await channel.send(content=mention_text if mention_text else None, embed=embed)
 
+async def send_daily_summary_reminder(when):
+    channel_id = config.get('reminder_channel_id', 0)
+    channel = bot.get_channel(channel_id) if channel_id else None
+    mention_role_id = config.get('mention_role_id')
+    mention_text = f'<@&{mention_role_id}>' if mention_role_id else ''
+    if not isinstance(channel, discord.TextChannel):
+        return
+    now = datetime.now(pytz.timezone('Asia/Singapore'))
+    # Guild Boss
+    guild_boss = next((e for e in events_data if 'Guild Boss' in e['name']), None)
+    guild_boss_str = "Guild Boss Schedule: Not set"
+    if guild_boss:
+        gb_time = next_event_time(guild_boss, now)
+        gb_remain = get_time_remaining(gb_time)
+        guild_boss_str = f"**Guild Boss Schedule**:\n{guild_boss['day']} at {format_time_12h(guild_boss['hour'], guild_boss['minute'])} GMT+8 (Time Remaining: {gb_remain})"
+    # Garbana Rally
+    garbana = next((e for e in events_data if 'Garbana' in e['name']), None)
+    garbana_str = "Garbana Rally Schedule: Not set"
+    if garbana:
+        garbana_time = next_event_time(garbana, now)
+        garbana_remain = get_time_remaining(garbana_time)
+        garbana_str = f"**Garbana Rally Schedule**:\n{garbana['day']} at {format_time_12h(garbana['hour'], garbana['minute'])} GMT+8 (Time Remaining: {garbana_remain})"
+    # World Boss
+    world_bosses = [e for e in events_data if 'World Boss' in e['name']]
+    boss_names = set(WORLD_BOSS_BANNERS.keys())
+    boss_events_str = ""
+    for boss in boss_names:
+        boss_events = [e for e in world_bosses if boss in e['name']]
+        for event in boss_events:
+            event_time = next_event_time(event, now)
+            time_remaining = get_time_remaining(event_time)
+            boss_events_str += f"- {event['name']} : {event['day']} at {format_time_12h(event['hour'], event['minute'])} GMT+8 (Time Remaining: {time_remaining})\n"
+    embed_desc = (
+        "📢 **DAILY GUILD & WORLD BOSS REMINDER** 📢\n\n"
+        f"{guild_boss_str}\n"
+        f"{garbana_str}\n"
+    )
+    embed_desc += "\n---------------------------------------------\n\n**World Boss Timer**\n"
+    embed_desc += boss_events_str if boss_events_str else "No world boss events configured.\n"
+    banner_url = next(iter(WORLD_BOSS_BANNERS.values()))
+    embed = discord.Embed(
+        title=f"Daily Guild & World Boss Reminder ({when})",
+        description=embed_desc + "\n" + random.choice(quotes),
+        color=0x00ff99
+    )
+    embed.set_image(url=banner_url)
+    await channel.send(content=mention_text if mention_text else None, embed=embed)
+
 class EditEventTimeModal(Modal):
     def __init__(self, event_idx, event_name, current_hour, current_minute, current_day=None):
         super().__init__(title=f"Edit Time: {event_name}")
@@ -272,39 +320,26 @@ def next_event_time(event, now):
 
 def schedule_events():
     scheduler.remove_all_jobs()
-    days_map = {
-        "Monday": 'mon', "Tuesday": 'tue', "Wednesday": 'wed', "Thursday": 'thu',
-        "Friday": 'fri', "Saturday": 'sat', "Sunday": 'sun', "Everyday": '*'
-    }
-    for event in events_data:
-        day = days_map.get(event['day'], '*')
-        hour = event['hour']
-        minute = event['minute']
-        # Calculate 15 minutes before
+    # Schedule daily summary reminders at 11AM and 8PM GMT+8
+    for hour in [11, 20]:
+        # 15 min before
         before_hour = hour
-        before_minute = minute - 15
-        before_day = day
+        before_minute = 0 - 15
         if before_minute < 0:
             before_minute += 60
             before_hour -= 1
             if before_hour < 0:
                 before_hour = 23
-                # Adjust day_of_week for previous day if not 'Everyday'
-                if day != '*':
-                    days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-                    idx = days.index(day)
-                    before_day = days[(idx - 1) % 7]
-        # Reminder 15 minutes before
         scheduler.add_job(
-            send_reminder,
-            CronTrigger(day_of_week=before_day, hour=before_hour, minute=before_minute, timezone='Asia/Singapore'),
-            args=[event, '15 min before']
+            send_daily_summary_reminder,
+            CronTrigger(hour=before_hour, minute=before_minute, timezone='Asia/Singapore'),
+            args=['15 min before']
         )
-        # Reminder at event time
+        # At event time
         scheduler.add_job(
-            send_reminder,
-            CronTrigger(day_of_week=day, hour=hour, minute=minute, timezone='Asia/Singapore'),
-            args=[event, 'Start']
+            send_daily_summary_reminder,
+            CronTrigger(hour=hour, minute=0, timezone='Asia/Singapore'),
+            args=['Start']
         )
 
 @l9_group.command(name="schedule", description="Show the current event schedule and edit times")
