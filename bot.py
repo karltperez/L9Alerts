@@ -242,7 +242,8 @@ async def setalert_command(interaction: Interaction):
 async def on_ready():
     print(f'Logged in as {bot.user}')
     try:
-        # Only sync commands for the guild (removes clear_commands to avoid Discord cache issues)
+        # Force clear all guild commands before syncing
+        bot.tree.clear_commands(guild=guild_obj)
         synced = await bot.tree.sync(guild=guild_obj)
         print(f'Synced {len(synced)} slash commands for guild {GUILD_ID}. Commands: {[cmd.name for cmd in synced]}')
     except Exception as e:
