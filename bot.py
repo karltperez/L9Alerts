@@ -308,7 +308,8 @@ async def setalert_command_error(interaction: Interaction, error):
 async def on_ready():
     print(f'Logged in as {bot.user}')
     try:
-        # Only sync commands for the guild
+        # Remove all guild commands before syncing to clear duplicates
+        bot.tree.clear_commands(guild=guild_obj)
         synced = await bot.tree.sync(guild=guild_obj)
         print(f'Synced {len(synced)} slash commands for guild {GUILD_ID}. Commands: {[cmd.name for cmd in synced]}')
     except Exception as e:
