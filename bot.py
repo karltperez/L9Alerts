@@ -308,8 +308,7 @@ async def setalert_command_error(interaction: Interaction, error):
 async def on_ready():
     print(f'Logged in as {bot.user}')
     try:
-        # Remove all guild commands before syncing to clear duplicates
-        bot.tree.clear_commands(guild=guild_obj)
+        # Only sync commands for the guild (removes clear_commands to avoid Discord cache issues)
         synced = await bot.tree.sync(guild=guild_obj)
         print(f'Synced {len(synced)} slash commands for guild {GUILD_ID}. Commands: {[cmd.name for cmd in synced]}')
     except Exception as e:
