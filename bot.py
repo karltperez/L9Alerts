@@ -138,7 +138,11 @@ async def send_daily_summary_reminder(when):
         for event in boss_events:
             event_time = next_event_time(event, now)
             time_remaining = get_time_remaining(event_time)
-            boss_events_str += f"- {event['name']} : {event['day']} at {format_time_12h(event['hour'], event['minute'])} GMT+8 (Time Remaining: {time_remaining})\n"
+            # Custom wording for 15 min before
+            if when == '15 min before':
+                boss_events_str += f"- {event['name']} : {event['day']} at {format_time_12h(event['hour'], event['minute'])} GMT+8 (Prepare to move in 15 mins, Time Remaining: {time_remaining})\n"
+            else:
+                boss_events_str += f"- {event['name']} : {event['day']} at {format_time_12h(event['hour'], event['minute'])} GMT+8 (Time Remaining: {time_remaining})\n"
     embed_desc = (
         "📢 **DAILY GUILD & WORLD BOSS REMINDER** 📢\n\n"
         f"{guild_boss_str}\n"
