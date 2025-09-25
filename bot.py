@@ -67,30 +67,6 @@ def save_events(events_data):
 config = load_config()
 events_data = load_events()
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def setchannel(ctx, channel: discord.TextChannel):
-    if not hasattr(channel, 'send'):
-        await ctx.send("Error: The selected channel is not a text channel.")
-        return
-    config['reminder_channel_id'] = channel.id
-    save_config(config)
-    await ctx.send(f"Reminder channel set to {channel.mention}")
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def setrole(ctx, role: Optional[discord.Role] = None):
-    if role:
-        if not ctx.guild.get_role(role.id):
-            await ctx.send("Error: The selected role does not exist.")
-            return
-        config['mention_role_id'] = role.id
-        await ctx.send(f"Role to mention set to {role.mention}")
-    else:
-        config['mention_role_id'] = 0
-        await ctx.send("Role mention removed.")
-    save_config(config)
-
 def get_time_remaining(event_time):
     now = datetime.now(pytz.timezone('Asia/Singapore'))
     delta = event_time - now
