@@ -132,13 +132,17 @@ async def send_reminder(event, when):
         await channel.send(content=mention_text if mention_text else None, embed=embed)
 
 class EditEventTimeModal(Modal):
-    def __init__(self, event_idx, event_name, current_hour, current_minute):
+    def __init__(self, event_idx, event_name, current_hour, current_minute, current_day=None):
         super().__init__(title=f"Edit Time: {event_name}")
         self.event_idx = event_idx
         self.hour_input = TextInput(label="Hour (0-23)", default=str(current_hour), required=True, max_length=2)
         self.minute_input = TextInput(label="Minute (0-59)", default=str(current_minute), required=True, max_length=2)
         self.add_item(self.hour_input)
         self.add_item(self.minute_input)
+        # Only allow day change for Guild Boss and Garbana
+        if event_name in ["Guild Boss", "Garbana Dungeon"]:
+            self.day_input = TextInput(label="Day (e.g. Saturday)", default=str(current_day), required=True, max_length=10)
+            self.add_item(self.day_input)
 
     async def on_submit(self, interaction: Interaction):
         try:
@@ -151,9 +155,16 @@ class EditEventTimeModal(Modal):
             return
         events_data[self.event_idx]['hour'] = hour
         events_data[self.event_idx]['minute'] = minute
+        # Save new day if allowed
+        if hasattr(self, 'day_input'):
+            new_day = self.day_input.value.strip()
+            valid_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            if new_day not in valid_days:
+                await interaction.response.send_message(f"Invalid day. Please enter one of: {', '.join(valid_days)}.", ephemeral=True)
+                return
+            events_data[self.event_idx]['day'] = new_day
         save_events(events_data)
-        await interaction.response.send_message(f"Updated {events_data[self.event_idx]['name']} to {hour:02d}:{minute:02d}.", ephemeral=True)
-        # Optionally, reschedule events here
+        await interaction.response.send_message(f"Updated {events_data[self.event_idx]['name']} to {hour:02d}:{minute:02d} {events_data[self.event_idx]['day']}.", ephemeral=True)
         schedule_events()
 
 class EventSelect(Select):
@@ -167,7 +178,7 @@ class EventSelect(Select):
     async def callback(self, interaction: Interaction):
         idx = int(self.values[0])
         event = events_data[idx]
-        modal = EditEventTimeModal(idx, event['name'], event['hour'], event['minute'])
+        modal = EditEventTimeModal(idx, event['name'], event['hour'], event['minute'], event['day'])
         await interaction.response.send_modal(modal)
 
 class ChannelSelect(Select):
