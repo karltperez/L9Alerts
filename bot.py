@@ -252,57 +252,15 @@ guild_obj = discord.Object(id=GUILD_ID)
 l9_group = app_commands.Group(name="l9", description="Lord Nine bot commands", guild_ids=[GUILD_ID])
 bot.tree.add_command(l9_group)
 
-class SetAlertModal(Modal):
-    def __init__(self):
-        super().__init__(title="Set Alert Channel and Role")
-        self.channel_id_input = TextInput(label="Channel ID", placeholder="Enter the channel ID for alerts", required=True, max_length=25)
-        self.role_id_input = TextInput(label="Role ID (optional)", placeholder="Enter the role ID to mention (or leave blank)", required=False, max_length=25)
-        self.add_item(self.channel_id_input)
-        self.add_item(self.role_id_input)
-
-    async def on_submit(self, interaction: Interaction):
-        channel_id = self.channel_id_input.value.strip()
-        role_id = self.role_id_input.value.strip()
-        # Validate channel ID
-        if not channel_id.isdigit():
-            await interaction.response.send_message("Error: Channel ID must be a number.", ephemeral=True)
-            return
-        channel_obj = interaction.client.get_channel(int(channel_id))
-        if not channel_obj or not hasattr(channel_obj, 'send'):
-            await interaction.response.send_message("Error: Channel ID is invalid or not a text channel.", ephemeral=True)
-            return
-        # Validate role ID if provided
-        if role_id:
-            if not role_id.isdigit():
-                await interaction.response.send_message("Error: Role ID must be a number.", ephemeral=True)
-                return
-            guild = interaction.guild or interaction.client.get_guild(GUILD_ID)
-            if not guild:
-                await interaction.response.send_message("Error: Could not determine guild context.", ephemeral=True)
-                return
-            role_obj = guild.get_role(int(role_id))
-            if not role_obj:
-                await interaction.response.send_message("Error: Role ID is invalid.", ephemeral=True)
-                return
-            config['mention_role_id'] = int(role_id)
-        else:
-            config['mention_role_id'] = 0
-        config['reminder_channel_id'] = int(channel_id)
-        save_config(config)
-        role_mention = f'<@&{role_id}>' if role_id else 'None'
-        await interaction.response.send_message(f"Alert channel set to <#{channel_id}>. Role mention set to {role_mention}.", ephemeral=True)
-
 @l9_group.command(name="setalert", description="Configure alert channel and mention role (admin only)")
 @app_commands.checks.has_permissions(administrator=True)
 async def setalert_command(interaction: Interaction):
-    await interaction.response.send_modal(SetAlertModal())
-
-@setalert_command.error
-async def setalert_command_error(interaction: Interaction, error):
-    if isinstance(error, app_commands.errors.MissingPermissions):
-        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"Error: {error}", ephemeral=True)
+    # Show dropdowns for channel and role selection instead of modal
+    await interaction.response.send_message(
+        "Select the alert channel and role to mention:",
+        view=SettingsView(interaction.guild or interaction.client.get_guild(GUILD_ID)),
+        ephemeral=True
+    )
 
 @bot.event
 async def on_ready():
