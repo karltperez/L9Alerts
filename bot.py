@@ -157,6 +157,7 @@ async def send_daily_summary_reminder(when):
         color=0x00ff99
     )
     embed.set_image(url=banner_url)
+    embed.add_field(name="Support the App", value="[Buy me a coffee](https://buymeacoffee.com/l9alerts)", inline=False)
     await channel.send(content=mention_text if mention_text else None, embed=embed)
 
 class EditEventTimeModal(Modal):
@@ -415,6 +416,7 @@ async def samplealert_command(interaction: Interaction):
         color=0x00ff99
     )
     embed.set_image(url=banner_url)
+    embed.add_field(name="Support the App", value="[Buy me a coffee](https://buymeacoffee.com/l9alerts)", inline=False)
     await channel.send(content=mention_text if mention_text else None, embed=embed)
     await interaction.response.send_message(f"Sample daily reminder sent to {channel.mention}.", ephemeral=True)
 
