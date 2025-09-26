@@ -420,4 +420,19 @@ async def samplealert_command(interaction: Interaction):
     await channel.send(content=mention_text if mention_text else None, embed=embed)
     await interaction.response.send_message(f"Sample daily reminder sent to {channel.mention}.", ephemeral=True)
 
+@l9_group.command(name="help", description="Show all available commands and their functions")
+async def help_command(interaction: Interaction):
+    help_text = (
+        "**Lord Nine Bot Commands:**\n\n"
+        "/l9 setalert — Configure alert channel and mention role (admin only)\n"
+        "/l9 schedule — Show the current event schedule and edit times\n"
+        "/l9 samplealert — Send a sample alert to the configured channel for preview/testing\n"
+        "/l9 help — Show all available commands and their functions\n\n"
+        "**Scheduled Reminders:**\n"
+        "- Daily Guild & World Boss reminders are sent automatically at 11AM and 8PM GMT+8, and 15 minutes before.\n"
+        "- Each reminder includes a random MMORPG min-maxing quote.\n\n"
+        "Support the App: [Buy me a coffee](https://buymeacoffee.com/l9alerts)"
+    )
+    await interaction.response.send_message(help_text, ephemeral=True)
+
 bot.run(TOKEN)
