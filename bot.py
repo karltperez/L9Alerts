@@ -439,7 +439,7 @@ async def help_command(interaction: Interaction):
 # Add error handler to show help if /l9 is used without a subcommand
 
 @bot.tree.error
-def on_app_command_error(interaction: Interaction, error):
+async def on_app_command_error(interaction: Interaction, error):
     if isinstance(error, app_commands.CommandNotFound):
         help_text = (
             "**Lord Nine Bot Commands:**\n\n"
@@ -452,7 +452,8 @@ def on_app_command_error(interaction: Interaction, error):
             "- Each reminder includes a random MMORPG min-maxing quote.\n\n"
             "Support the App: [Buy me a coffee](https://buymeacoffee.com/l9alerts)"
         )
-        return interaction.response.send_message(help_text, ephemeral=True)
+        await interaction.response.send_message(help_text, ephemeral=True)
+        return
     raise error
 
 bot.run(TOKEN)
