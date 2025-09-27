@@ -435,19 +435,24 @@ async def help_command(interaction: Interaction):
     )
     await interaction.response.send_message(help_text, ephemeral=True)
 
-@l9_group.command(name="", description="Show help if /l9 is used without a subcommand")
-async def l9_root_help(interaction: Interaction):
-    help_text = (
-        "**Lord Nine Bot Commands:**\n\n"
-        "/l9 setalert — Configure alert channel and mention role (admin only)\n"
-        "/l9 schedule — Show the current event schedule and edit times\n"
-        "/l9 samplealert — Send a sample alert to the configured channel for preview/testing\n"
-        "/l9 help — Show all available commands and their functions\n\n"
-        "**Scheduled Reminders:**\n"
-        "- Daily Guild & World Boss reminders are sent automatically at 11AM and 8PM GMT+8, and 15 minutes before.\n"
-        "- Each reminder includes a random MMORPG min-maxing quote.\n\n"
-        "Support the App: [Buy me a coffee](https://buymeacoffee.com/l9alerts)"
-    )
-    await interaction.response.send_message(help_text, ephemeral=True)
+# Remove invalid fallback command for /l9
+# Add error handler to show help if /l9 is used without a subcommand
+
+@bot.tree.error
+def on_app_command_error(interaction: Interaction, error):
+    if isinstance(error, app_commands.CommandNotFound):
+        help_text = (
+            "**Lord Nine Bot Commands:**\n\n"
+            "/l9 setalert — Configure alert channel and mention role (admin only)\n"
+            "/l9 schedule — Show the current event schedule and edit times\n"
+            "/l9 samplealert — Send a sample alert to the configured channel for preview/testing\n"
+            "/l9 help — Show all available commands and their functions\n\n"
+            "**Scheduled Reminders:**\n"
+            "- Daily Guild & World Boss reminders are sent automatically at 11AM and 8PM GMT+8, and 15 minutes before.\n"
+            "- Each reminder includes a random MMORPG min-maxing quote.\n\n"
+            "Support the App: [Buy me a coffee](https://buymeacoffee.com/l9alerts)"
+        )
+        return interaction.response.send_message(help_text, ephemeral=True)
+    raise error
 
 bot.run(TOKEN)
